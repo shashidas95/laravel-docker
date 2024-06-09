@@ -1,0 +1,71 @@
+version: '3.8'
+services:
+  # Web Server Service
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - '8080:80'
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - db
+    networks:
+      - laravel
+
+  #phpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '3400:80'
+    depends_on:
+      - db
+    networks:
+      - laravel
+
+  # Database Service
+  db:
+    # If you're using Mac with ARM architecture processor uncomment the below code
+    # platform: linux/x86_64
+    image: mysql
+    container_name: mysql
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_DATABASE: blog_docker_laravel
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+
+    networks:
+      - laravel
+
+  # PHP Service
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/var/www/html
+    ports:
+      - '9000:9000'
+    networks:
+      - laravel
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=blog_docker_laravel
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+
+networks:
+  laravel:
+    driver: bridge
